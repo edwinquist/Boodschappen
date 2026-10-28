@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weekmenu & Boodschappen</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--tx:#1d2a22;--mu:#66736b;--ac:#00a0e2;--ac2:#e8f6fd;--bd:#e2ded2;--ok:#2e9e5b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14191600;--bg:#141916;--card:#1e2520;--tx:#eef2ee;--mu:#9aa89f;--ac:#4cc2f5;--ac2:#17303b;--bd:#2d362f;--ok:#5cc98a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141916;--card:#1e2520;--tx:#eef2ee;--mu:#9aa89f;--ac:#4cc2f5;--ac2:#17303b;--bd:#2d362f;--ok:#5cc98a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:22px;margin:6px 0 12px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px}
+nav button{flex:1;white-space:nowrap;padding:10px 12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}
+nav button.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+label.d{width:84px;font-weight:600;flex:none}
+select,input,textarea{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:90px;resize:vertical}
+button.b{padding:9px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.g{padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:none;color:var(--mu);font:inherit;cursor:pointer}
+.mu{color:var(--mu);font-size:14px}
+.it{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.it:last-child{border:0}
+.it input[type=checkbox]{width:22px;height:22px;flex:none}
+.it span.n{flex:1}
+.it.done span.n{text-decoration:line-through;color:var(--mu)}
+.it a{color:var(--ac);font-size:14px;text-decoration:none}
+h2{font-size:17px;margin:16px 0 8px}
+.tag{font-size:12px;color:var(--mu)}
+.cat{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;font-weight:700;border-bottom:1px solid var(--bd)}
+.cr{display:flex;gap:10px;align-items:center}
+.ct{font-weight:500;font-size:13px;opacity:.85}
+.tb{background:transparent;color:inherit;border:1px solid currentColor;border-radius:8px;padding:3px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.cat .it{padding:8px 14px}
+.cs{width:auto;padding:5px 6px;font-size:13px;color:var(--mu)}
+</style>
+</head>
+<body>
+<main>
+<h1>🛒 Weekmenu & boodschappen</h1>
+<nav id="nav"></nav>
+<div id="v"></div>
+</main>
+<script>
+const DAYS=["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag","Zondag"];
+const DEF={
+ dishes:[
+  {id:1,name:"Spaghetti bolognese",ing:["400 g gehakt","500 g spaghetti","1 stuks ui","1 stuks pot pastasaus"]},
+  {id:2,name:"Wraps met kip",ing:["8 stuks wraps","400 g kipfilet","1 stuks paprika","1 stuks sla"]},
+  {id:3,name:"Stamppot boerenkool",ing:["1 kg aardappelen","500 g boerenkool","2 stuks rookworst"]}
+ ],
+ menu:{},
+ weekly:[{n:"Melk",q:2,u:"l",on:true},{n:"Brood",q:1,u:"",on:true},{n:"Eieren",q:1,u:"doos",on:true},{n:"Bananen",q:1,u:"bos",on:true}],
+ checked:{}
+};
+let S;
+try{S=JSON.parse(localStorage.getItem("wm-state")||"null")}catch(e){S=null}
+if(!S)S=JSON.parse(JSON.stringify(DEF));
+if(!S.prefs)S.prefs={};
+const A="https://www.ah.nl/producten/product/";
+const TOP=[
+ {n:"Halfvolle melk",q:2,p:"De Zaanse Hoeve Halfvolle melk 2 liter",u:A+"wi200486/de-zaanse-hoeve-halfvolle-melk"},
+ {n:"Zaanse volkoren bollen",q:2,p:"AH Extra lang lekker zaans volkoren bol 10s",u:A+"wi439816/ah-extra-lang-lekker-zaans-volkoren-bol-10s"},
+ {n:"Eieren",q:1,p:"AH Verse scharreleieren M 20 stuks",u:A+"wi130273/ah-verse-scharreleieren-m"},
+ {n:"Komkommer",q:2,p:"AH Komkommer",u:A+"wi54074/ah-komkommer"},
+ {n:"Broccoli",q:2,p:"AH Broccoli 500 gram",u:A+"wi4177/ah-broccoli"},
+ {n:"Bananen",q:1,p:"AH Bananen tros",u:A+"wi197393/ah-bananen-tros"},
+ {n:"Rozijnenbollen",q:1,p:"AH Extra lang lekker mini rozijnenbollen 9 stuks",u:A+"wi497624/ah-extra-lang-lekker-mini-rozijnenbollen"},
+ {n:"Zaans volkoren half brood",q:3,p:"AH Extra lang lekker Zaans volkoren half",u:A+"wi582991/ah-extra-lang-lekker-zaans-volkoren-half"},
+ {n:"Paprika mix",q:2,p:"AH Paprika mix 3 stuks",u:A+"wi41194/ah-paprika-mix"},
+ {n:"Airfryer ovenfriet",q:1,p:"AH Airfryer ovenfriet 750 gram",u:A+"wi195093/ah-airfryer-ovenfriet"}
+];
+const NEXT=[
+ {n:"Kipfilet stukjes roerbak",q:1,p:"AH Scharrel kipfilet stukjes roerbak 500 gram",u:A+"wi531828/ah-scharrel-kipfilet-stukjes-roerbak"},
+ {n:"Griekse yoghurt",q:1,p:"De Zaanse Hoeve Yoghurt Griekse stijl 10% vet 1 kilogram",u:A+"wi216237/de-zaanse-hoeve-yoghurt-griekse-stijl-10-vet"},
+ {n:"Magere kwark (Zaanse Hoeve)",q:3,p:"De Zaanse Hoeve Magere kwark 1 kilogram",u:A+"wi458995/de-zaanse-hoeve-magere-kwark"},
+ {n:"Kipfilet grootverpakking",q:2,p:"AH Kipfilet grootverpakking 250 gram",u:A+"wi132220/ah-kipfilet-grootverpakking"},
+ {n:"Sperziebonen",q:1,p:"AH Sperziebonen fijn heel 450 gram",u:A+"wi39619/ah-sperziebonen-fijn-heel"},
+ {n:"Kipgrillworst",q:1,p:"AH Kipgrillworst 150 gram",u:A+"wi197444/ah-kipgrillworst"},
+ {n:"Hagelslag puur",q:1,p:"AH Hagelslag xl puur 380 gram",u:A+"wi465752/ah-hagelslag-xl-puur"},
+ {n:"Vega paté",q:1,p:"Kips Vega paté vol en smeuig 125 gram",u:A+"wi445419/kips-vega-pate%CC%81-vol-en-smeuig"},
+ {n:"Boterhamworst",q:1,p:"AH Boterhamworst minder vet 150 gram",u:A+"wi595130/ah-boterhamworst-minder-vet"},
+ {n:"Magere kwark (AH)",q:3,p:"AH Magere kwark 1 kilogram",u:A+"wi231878/ah-magere-kwark"}
+];
+if((S.seeded||0)<2){
+ const old=["melk","brood","eieren","bananen"];
+ S.weekly=S.weekly.filter(w=>!old.includes(w.n.toLowerCase()));
+ (S.seeded?NEXT:TOP.concat(NEXT)).forEach(t=>{
+  if(!S.weekly.some(w=>w.n.toLowerCase()==t.n.toLowerCase()))S.weekly.push({n:t.n,q:t.q,u:"",on:true});
+  S.prefs[t.n.toLowerCase()]={n:t.n,p:t.p,u:t.u};
+ });
+ S.seeded=2;save();
+}
+function save(){try{localStorage.setItem("wm-state",JSON.stringify(S))}catch(e){}}
+let tab="menu";
+const TABS=[["menu","Weekmenu"],["dishes","Gerechten"],["weekly","Vast"],["prefs","Voorkeur"],["list","Lijst"]];
+let PF={n:"",p:"",u:""};
+const CATS=[{k:"Zuivel",bg:"#ffffff",fg:"#1d2a22"},{k:"Brood",bg:"#8a5a2b",fg:"#ffffff"},{k:"Vlees",bg:"#c0392b",fg:"#ffffff"},{k:"Groente",bg:"#2e9e5b",fg:"#ffffff"},{k:"Overig",bg:"#66736b",fg:"#ffffff"}];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function parse(line){
+ const m=line.trim().match(/^(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l|el|tl|stuks?|pak|pakken|bos|doos|blik|zak)?\s+(.+)$/i);
+ if(m)return{n:m[3].trim(),q:parseFloat(m[1].replace(",",".")),u:(m[2]||"").toLowerCase().replace(/^stuks$/,"stuk")};
+ return{n:line.trim(),q:null,u:""};
+}
+function fmt(i){return (i.q==null?"":(Math.round(i.q*100)/100+(i.u?" "+i.u:"")+" "))+i.n}
+function build(){
+ const map={};
+ const add=i=>{const k=i.n.toLowerCase()+"|"+(i.u||"");
+  if(!map[k])map[k]={n:i.n,u:i.u,q:i.q,src:[]};
+  else if(i.q!=null)map[k].q=(map[k].q||0)+i.q;
+  return map[k]};
+ DAYS.forEach((d,ix)=>{const dish=S.dishes.find(x=>x.id==S.menu[ix]);
+  if(dish)dish.ing.forEach(l=>add(parse(l)).src.push(d.slice(0,2)))});
+ S.weekly.filter(w=>w.on).forEach(w=>{const k=w.n.toLowerCase()+"|"+(w.u||"");const m=map[k];if(m){if(w.q!=null)m.q=Math.max(m.q||0,w.q);m.src.push("vast")}else add(w).src.push("vast")});
+ return Object.entries(map).map(([k,v])=>({k,...v}));
+}
+function render(){
+ document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';render()">${l}</button>`).join("");
+ const v=document.getElementById("v");
+ if(tab=="menu"){
+  v.innerHTML=`<p class="mu">Kies per dag een gerecht uit je favorieten.</p>`+DAYS.map((d,i)=>`<div class="card row"><label class="d">${d}</label><select onchange="S.menu[${i}]=this.value;save()"><option value="">– geen –</option>${S.dishes.map(x=>`<option value="${x.id}" ${S.menu[i]==x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div>`).join("")+`<button class="b" onclick="tab='list';render()">Maak boodschappenlijst →</button> <button class="g" onclick="S.menu={};save();render()">Leegmaken</button>`;
+ }
+ if(tab=="dishes"){
+  v.innerHTML=S.dishes.map((x,i)=>`<div class="card"><div class="row"><input value="${esc(x.name)}" onchange="S.dishes[${i}].name=this.value;save()"><button class="g" onclick="delDish(${i})">Verwijder</button></div><p class="tag">Ingrediënten, één per regel (bijv. “400 g gehakt”)</p><textarea onchange="S.dishes[${i}].ing=this.value.split('\\n').map(s=>s.trim()).filter(Boolean);save()">${esc(x.ing.join("\n"))}</textarea></div>`).join("")+`<div class="card row"><input id="nd" placeholder="Nieuw favoriet gerecht"><button class="b" onclick="addDish()">Toevoegen</button></div>`;
+ }
+ if(tab=="weekly"){
+  v.innerHTML=`<p class="mu">Wat je elke week nodig hebt. Zet uit wat je deze week overslaat.</p>`+CATS.map(c=>{const it=S.weekly.map((w,i)=>({w,i})).filter(o=>(o.w.c||"Overig")==c.k);return it.length?`<div class="cat"><div class="ch" style="background:${c.bg};color:${c.fg}">${c.k}<span class="cr"><span class="ct">${it.filter(o=>o.w.on).length}/${it.length} aan</span><button class="tb" onclick="togCat('${c.k}')">${it.every(o=>o.w.on)?"Alles uit":"Alles aan"}</button></span></div>${it.map(({w,i})=>`<div class="it"><input type="checkbox" ${w.on?"checked":""} onchange="S.weekly[${i}].on=this.checked;save()"><span class="n">${esc(fmt(w))}</span><select class="cs" onchange="S.weekly[${i}].c=this.value;save();render()">${CATS.map(x=>`<option ${x.k==(w.c||"Overig")?"selected":""}>${x.k}</option>`).join("")}</select><button class="g" onclick="S.weekly.splice(${i},1);save();render()">✕</button></div>`).join("")}</div>`:""}).join("")+`<div class="card"><div class="row"><input id="nw" placeholder="Bijv. 2 l halfvolle melk"><select id="nc" style="width:130px;flex:none">${CATS.map(x=>`<option>${x.k}</option>`).join("")}</select></div><div style="height:8px"></div><button class="b" onclick="addW()">Toevoegen</button></div>`;
+ }
+ if(tab!="prefs")PF={n:"",p:"",u:""};
+ if(tab=="prefs"){
+  const ks=Object.keys(S.prefs);
+  v.innerHTML=`<p class="mu">Koppel een artikel aan jouw vaste product. Plak de link van de ah.nl-productpagina, dan gaat het knopje in je lijst daar direct naartoe. Zonder link zoekt hij op de naam van jouw product.</p><div class="card"><input id="pn" placeholder="Artikel (bijv. melk)" value="${esc(PF.n)}"><div style="height:8px"></div><input id="pp" placeholder="Jouw product (bijv. AH Halfvolle melk)" value="${esc(PF.p)}"><div style="height:8px"></div><input id="pu" placeholder="Link naar ah.nl-product (optioneel)" value="${esc(PF.u)}"><div style="height:8px"></div><button class="b" onclick="savePref()">Opslaan</button></div>`+(ks.length?`<div class="card">${ks.map((k,x)=>{const p=S.prefs[k];return `<div class="it"><span class="n"><b>${esc(p.n)}</b><br><span class="tag">★ ${esc(p.p)}${p.u?" · link opgeslagen":""}</span></span><button class="g" onclick="editPrefI(${x})">Wijzig</button><button class="g" onclick="delPrefI(${x})">✕</button></div>`}).join("")}</div>`:"");
+ }
+ if(tab=="list"){
+  const L=build();
+  const open=L.filter(i=>!S.checked[i.k]),done=L.filter(i=>S.checked[i.k]);
+  const row=i=>`<div class="it ${S.checked[i.k]?"done":""}"><input type="checkbox" ${S.checked[i.k]?"checked":""} onchange="S.checked['${esc(i.k).replace(/'/g,"\\'")}']=this.checked;save();render()"><span class="n">${esc(fmt(i))}${pf(i)?` <span class="tag">★ ${esc(pf(i).p)}</span>`:""} <span class="tag">${i.src.join(", ")}</span></span><a href="${esc(lnk(i))}" target="_blank" rel="noopener">${pf(i)&&pf(i).u?"Product ↗":"AH ↗"}</a> <button class="g" onclick="editPref(decodeURIComponent('${encodeURIComponent(i.n).replace(/'/g,"%27")}'))">★</button></div>`;
+  v.innerHTML=L.length?`<div class="card">${open.map(row).join("")||'<p class="mu">Alles afgevinkt 🎉</p>'}</div>${done.length?`<h2>Al in je mandje</h2><div class="card">${done.map(row).join("")}</div>`:""}<button class="b" onclick="copyL()" id="cp">Kopieer lijst</button> <button class="g" onclick="S.checked={};save();render()">Vinkjes wissen</button><p class="mu">Tik op “AH ↗” om een product direct op ah.nl te zoeken en in je mandje te leggen.</p>`:`<p class="mu">Je lijst is nog leeg. Kies gerechten in het weekmenu of zet vaste boodschappen aan.</p>`;
+ }
+}
+function addDish(){const n=document.getElementById("nd").value.trim();if(!n)return;S.dishes.push({id:Date.now(),name:n,ing:[]});save();render()}
+function delDish(i){const id=S.dishes[i].id;S.dishes.splice(i,1);for(const k in S.menu)if(S.menu[k]==id)delete S.menu[k];save();render()}
+function addW(){const t=document.getElementById("nw").value.trim();if(!t)return;S.weekly.push({...parse(t),on:true,c:document.getElementById("nc").value});save();render()}
+function copyL(){
+ const t=build().filter(i=>!S.checked[i.k]).map(i=>"• "+fmt(i)).join("\n");
+ const b=document.getElementById("cp");
+ const ok=()=>{b.textContent="Gekopieerd ✓"};
+ try{navigator.clipboard.writeText(t).then(ok,()=>{b.textContent="Kopiëren niet gelukt"})}catch(e){b.textContent="Kopiëren niet gelukt"}
+}
+function pf(i){const n=i.n.toLowerCase();return S.prefs[n]||Object.values(S.prefs).find(p=>n.includes(p.n.toLowerCase()))||null}
+function lnk(i){const p=pf(i);if(p&&/^https?:\/\//i.test(p.u||""))return p.u;return "https://www.ah.nl/zoeken?query="+encodeURIComponent(p&&p.p?p.p:i.n)}
+function editPref(n){const p=S.prefs[n.toLowerCase()];PF=p?{n:p.n,p:p.p,u:p.u||""}:{n:n,p:"",u:""};tab="prefs";render();window.scrollTo(0,0)}
+function editPrefI(x){editPref(S.prefs[Object.keys(S.prefs)[x]].n)}
+function delPrefI(x){delete S.prefs[Object.keys(S.prefs)[x]];save();render()}
+function savePref(){const n=document.getElementById("pn").value.trim(),p=document.getElementById("pp").value.trim(),u=document.getElementById("pu").value.trim();if(!n||(!p&&!u))return;S.prefs[n.toLowerCase()]={n,p:p||n,u};save();PF={n:"",p:"",u:""};render()}
+function togCat(k){const it=S.weekly.filter(w=>(w.c||"Overig")==k);const on=!it.every(w=>w.on);it.forEach(w=>{w.on=on});save();render()}
+const DISHES=[
+ {id:101,name:"Gekookte aardappels, gehaktbal & sperziebonen",ing:["1 Aardappelen","Gehaktballen","1 Sperziebonen"]},
+ {id:102,name:"Frietjes, salade & vlees",ing:["1 Airfryer ovenfriet","1 Komkommer","1 Ijsbergsla","Vlees naar keuze"]},
+ {id:103,name:"Ketjapnoedels met krokante kip & nasigroente",ing:["Ketjapnoedels","1 Krokante kipfiletschnitzel","1 Nasi groente"]},
+ {id:104,name:"Krieltjes, pangasiusfilet & worteltjes",ing:["1 Krieltjes","1 Pangasiusfilet","1 Worteltjes"]},
+ {id:105,name:"Pokébowl",ing:["1 Zilvervliesrijst","1 Gerookte zalm","1 Komkommer","1 Avocado","1 Maïskorrels"]},
+ {id:106,name:"Gebakken aardappeltjes, broccoli & cordon bleu",ing:["1 Aardappelschijfjes","1 Broccoli","1 Kip cordon bleu"]},
+ {id:107,name:"Pasta met kip, broccoli/courgette & mozzarella",ing:["1 Fusilli volkoren","1 Kipfilet stukjes roerbak","1 Broccoli","1 Courgette","Mozzarella","Pijnboompitten"]}
+];
+const PREFS3=[
+ {n:"Aardappelen",p:"AH Aardappelen voor de stamppot 600 gram",u:A+"wi169688/ah-aardappelen-voor-de-stamppot"},
+ {n:"Ijsbergsla",p:"AH Ijsbergsla",u:A+"wi4099/ah-ijsbergsla"},
+ {n:"Krokante kipfiletschnitzel",p:"AH Scharrel krokante kipfiletschnitzel 200 gram",u:A+"wi531875/ah-scharrel-krokante-kipfiletschnitzel"},
+ {n:"Nasi groente",p:"AH Nasi groente 450 gram",u:A+"wi494452/ah-nasi-groente"},
+ {n:"Krieltjes",p:"AH Krieltjes 500 gram",u:A+"wi67907/ah-krieltjes"},
+ {n:"Pangasiusfilet",p:"AH Pangasiusfilet 350 gram",u:A+"wi571233/ah-pangasiusfilet"},
+ {n:"Worteltjes",p:"AH Geschrapte worteltjes grootverpakking 500 gram",u:A+"wi128148/ah-geschrapte-worteltjes-grootverpakking"},
+ {n:"Zilvervliesrijst",p:"AH Zilvervliesrijst 1 kilogram",u:A+"wi162513/ah-zilvervliesrijst"},
+ {n:"Gerookte zalm",p:"AH Gerookte zalm 100 gram",u:A+"wi130191/ah-gerookte-zalm"},
+ {n:"Avocado",p:"AH Avocado eetrijp 2 stuks",u:A+"wi129400/ah-avocado-eetrijp"},
+ {n:"Maïskorrels",p:"AH Biologisch Maiskorrels 150 gram",u:A+"wi583799/ah-biologisch-maiskorrels-0-zout-toegevoegd"},
+ {n:"Aardappelschijfjes",p:"AH Aardappelschijfjes 600 gram",u:A+"wi155600/ah-aardappelschijfjes"},
+ {n:"Kip cordon bleu",p:"AH Scharrel kip cordon bleu 2 stuks",u:A+"wi531867/ah-scharrel-kip-cordon-bleu-2-stuks"},
+ {n:"Fusilli volkoren",p:"Grand’ Italia Fusilli volkoren 500 gram",u:A+"wi196825/grand-italia-fusilli-volkoren"},
+ {n:"Courgette",p:"AH Courgette",u:A+"wi4164/ah-courgette"}
+];
+if((S.seeded||0)<3){
+ DISHES.forEach(d=>{if(!S.dishes.some(x=>x.id==d.id))S.dishes.push(d)});
+ PREFS3.forEach(t=>{const k=t.n.toLowerCase();if(!S.prefs[k])S.prefs[k]=t});
+ S.menu={4:101,5:102,6:103,0:104,1:105,2:106,3:107};
+ S.seeded=3;save();
+}
+const CAT={"halfvolle melk":"Zuivel","eieren":"Zuivel","griekse yoghurt":"Zuivel","magere kwark (zaanse hoeve)":"Zuivel","magere kwark (ah)":"Zuivel","zaanse volkoren bollen":"Brood","zaans volkoren half brood":"Brood","rozijnenbollen":"Brood","hagelslag puur":"Brood","kipfilet stukjes roerbak":"Vlees","kipfilet grootverpakking":"Vlees","kipgrillworst":"Vlees","boterhamworst":"Vlees","vega paté":"Vlees","komkommer":"Groente","broccoli":"Groente","bananen":"Groente","paprika mix":"Groente","sperziebonen":"Groente","airfryer ovenfriet":"Groente"};
+let ch=false;S.weekly.forEach(w=>{if(!w.c){w.c=CAT[w.n.toLowerCase()]||"Overig";ch=true}});if(ch)save();
+render();
+</script>
+</body>
+</html>
